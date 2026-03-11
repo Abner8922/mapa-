@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+<meta charset="UTF-8">
+<title>Sistema Inteligente de Transporte</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+</head>
+
+<body>
+
+<header>
+Sistema Inteligente de Transporte
+</header>
+
+<div class="menu">
+
+<label>Destino:</label>
+
+<select id="destino">
+
+<option value="puc">PUC</option>
+<option value="centro">Centro</option>
+<option value="cabral">Terminal Cabral</option>
+<option value="tangua">Parque Tanguá</option>
+<option value="barreirinha">Barreirinha</option>
+<option value="ahu">Ahú</option>
+
+</select>
+
+<button onclick="buscarRotas()">Buscar rotas</button>
+
+</div>
+
+<div id="status"></div>
+
+<div id="map"></div>
+
+<div class="info">
+🚌 Ícone representa o ônibus em movimento
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
