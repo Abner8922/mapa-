@@ -1,7 +1,7 @@
 body{
 margin:0;
 font-family:Arial;
-background:#f2f2f2;
+background:#f5f7fa;
 }
 
 header{
@@ -9,45 +9,57 @@ background:#0077ff;
 color:white;
 padding:15px;
 text-align:center;
-font-size:22px;
+font-size:20px;
 }
 
-.menu{
+.painel{
 text-align:center;
-margin:15px;
+padding:10px;
+background:white;
 }
 
-select,button{
+input{
 padding:10px;
-font-size:16px;
-border-radius:6px;
-margin:5px;
+width:250px;
+border-radius:8px;
+border:1px solid #ccc;
 }
 
 button{
+padding:10px;
+border:none;
 background:#0077ff;
 color:white;
-border:none;
+border-radius:8px;
 cursor:pointer;
 }
 
 #map{
-height:500px;
-width:95%;
-margin:auto;
-border-radius:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.2);
-}
-
-.info{
-text-align:center;
-margin:15px;
-font-size:14px;
-color:#444;
-}
-
-#status{
-text-align:center;
-font-size:16px;
+height:550px;
 margin:10px;
+border-radius:10px;
+}
+
+.rota{
+background:white;
+margin:10px;
+padding:10px;
+border-radius:8px;
+cursor:pointer;
+box-shadow:0 2px 5px rgba(0,0,0,0.2);
+}
+
+.rota:hover{
+background:#e8f1ff;
+}
+
+.popup{
+position:absolute;
+top:100px;
+left:50%;
+transform:translateX(-50%);
+background:white;
+padding:20px;
+border-radius:10px;
+z-index:1000;
 }

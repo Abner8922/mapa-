@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
+
 <meta charset="UTF-8">
-<title>Sistema Inteligente de Transporte</title>
+<title>SmartBus - Sistema Inteligente</title>
 
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
@@ -12,36 +12,30 @@
 
 <body>
 
-<header>
-Sistema Inteligente de Transporte
-</header>
+<header>🚍 SmartBus</header>
 
-<div class="menu">
+<div id="popupTerminal" class="popup">
+<h3>Escolha seu terminal</h3>
 
-<label>Destino:</label>
-
-<select id="destino">
-
-<option value="puc">PUC</option>
-<option value="centro">Centro</option>
-<option value="cabral">Terminal Cabral</option>
-<option value="tangua">Parque Tanguá</option>
-<option value="barreirinha">Barreirinha</option>
-<option value="ahu">Ahú</option>
-
+<select id="terminalSelect">
+<option>Terminal Boqueirão</option>
+<option>Terminal Cabral</option>
+<option>Terminal Portão</option>
+<option>Terminal Pinheirinho</option>
+<option>Terminal Capão Raso</option>
 </select>
 
-<button onclick="buscarRotas()">Buscar rotas</button>
-
+<button onclick="confirmarTerminal()">Confirmar</button>
 </div>
 
-<div id="status"></div>
+<div class="painel">
+<input id="destino" placeholder="Digite o destino">
+<button onclick="buscarRota()">Buscar</button>
+</div>
+
+<div id="info"></div>
 
 <div id="map"></div>
-
-<div class="info">
-🚌 Ícone representa o ônibus em movimento
-</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="script.js"></script>
