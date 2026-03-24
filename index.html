@@ -1,44 +1,45 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-
-<meta charset="UTF-8">
-<title>SmartBus - Sistema Inteligente</title>
-
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartBus - Sistema Inteligente</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 </head>
-
 <body>
 
-<header>🚍 SmartBus</header>
+    <div id="map"></div>
 
-<div id="popupTerminal" class="popup">
-<h3>Escolha seu terminal</h3>
+    <div class="ui-container">
+        <header>🚍 SmartBus</header>
 
-<select id="terminalSelect">
-<option>Terminal Boqueirão</option>
-<option>Terminal Cabral</option>
-<option>Terminal Portão</option>
-<option>Terminal Pinheirinho</option>
-<option>Terminal Capão Raso</option>
-</select>
+        <div id="popupTerminal" class="card">
+            <h3>📍 Onde você está?</h3>
+            <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Simulação de leitura de QR Code.</p>
+            <select id="terminalSelect" class="input-moderno">
+                <option value="Terminal Guadalupe">Terminal Guadalupe</option>
+                <option value="Terminal Boqueirão">Terminal Boqueirão</option>
+                <option value="Terminal Cabral">Terminal Cabral</option>
+                <option value="Terminal Portão">Terminal Portão</option>
+                <option value="Terminal Pinheirinho">Terminal Pinheirinho</option>
+                <option value="Terminal Capão Raso">Terminal Capão Raso</option>
+            </select>
+            <button class="btn-primario" onclick="confirmarTerminal()">Confirmar Terminal</button>
+        </div>
 
-<button onclick="confirmarTerminal()">Confirmar</button>
-</div>
+        <div id="painelBusca" class="card" style="display: none;">
+            <div class="autocomplete-container">
+                <input id="destino" class="input-moderno" placeholder="Para onde você quer ir?" oninput="filtrarLocais()" autocomplete="off">
+                <div id="sugestoes" class="sugestoes-box"></div>
+            </div>
+            <button class="btn-primario" onclick="buscarRota()">Buscar Rota</button>
+        </div>
 
-<div class="painel">
-<input id="destino" placeholder="Digite o destino">
-<button onclick="buscarRota()">Buscar</button>
-</div>
+        <div id="info"></div>
+    </div>
 
-<div id="info"></div>
-
-<div id="map"></div>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="script.js"></script>
-
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

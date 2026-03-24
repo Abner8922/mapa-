@@ -1,306 +1,352 @@
-let map = L.map('map').setView([-25.43,-49.27],13)
+// Inicializa o mapa centralizado
+let map = L.map('map', {zoomControl: false}).setView([-25.43, -49.27], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+L.control.zoom({ position: 'topright' }).addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
+// Variáveis Globais
+let terminalEscolhido = null;
+let nomeTerminalEscolhido = ""; 
+let pontosLinha = [];
+let rotasAtuais = [];
+let camadas = [];
+let shapes = {};       
+let linhasShapes = {}; 
+let animacaoOnibus; 
 
-let terminalEscolhido=null
-let rotas={}
-let pontosLinha=[]
-let rotasAtuais=[]
-let camadas=[]
+let terminais = {
+    "Terminal Guadalupe": [-25.4326, -49.2655],
+    "Terminal Boqueirão": [-25.517, -49.230],
+    "Terminal Cabral": [-25.406, -49.252],
+    "Terminal Portão": [-25.478, -49.293],
+    "Terminal Pinheirinho": [-25.538, -49.293],
+    "Terminal Capão Raso": [-25.506, -49.291],
+    "Terminal Carmo": [-25.501, -49.243] // Adicionado para seu teste
+};
 
-let terminais={
-"Terminal Boqueirão":[-25.517,-49.230],
-"Terminal Cabral":[-25.406,-49.252],
-"Terminal Portão":[-25.478,-49.293],
-"Terminal Pinheirinho":[-25.538,-49.293],
-"Terminal Capão Raso":[-25.506,-49.291]
+const baseLocais = [
+    { nome: "Jardim Botânico", cidade: "Curitiba - PR", lat: -25.4428, lon: -49.2384 },
+    { nome: "Museu Oscar Niemeyer (MON)", cidade: "Curitiba - PR", lat: -25.4104, lon: -49.2673 },
+    { nome: "Parque Barigui", cidade: "Curitiba - PR", lat: -25.4244, lon: -49.3083 },
+    { nome: "Ópera de Arame", cidade: "Curitiba - PR", lat: -25.3855, lon: -49.2761 },
+    { nome: "Parque Tanguá", cidade: "Curitiba - PR", lat: -25.3785, lon: -49.2785 },
+    { nome: "Bosque do Papa", cidade: "Curitiba - PR", lat: -25.4087, lon: -49.2690 },
+    { nome: "Mercado Municipal", cidade: "Curitiba - PR", lat: -25.4344, lon: -49.2562 },
+    { nome: "Praça Tiradentes", cidade: "Curitiba - PR", lat: -25.4284, lon: -49.2733 },
+    { nome: "Passeio Público", cidade: "Curitiba - PR", lat: -25.4251, lon: -49.2662 },
+    { nome: "Parque da Uva", cidade: "Colombo - PR", lat: -25.3033, lon: -49.2274 }
+];
+
+let localSelecionado = null; 
+
+// ================= LÓGICA DO AUTOCOMPLETAR =================
+function filtrarLocais() {
+    let termo = document.getElementById("destino").value.toLowerCase();
+    let divSugestoes = document.getElementById("sugestoes");
+    divSugestoes.innerHTML = "";
+    localSelecionado = null; 
+
+    if (termo.length < 1) {
+        divSugestoes.style.display = "none";
+        return;
+    }
+
+    let filtrados = baseLocais.filter(l => l.nome.toLowerCase().includes(termo) || l.cidade.toLowerCase().includes(termo));
+
+    if (filtrados.length > 0) {
+        divSugestoes.style.display = "block";
+        filtrados.forEach(l => {
+            let item = document.createElement("div");
+            item.className = "sugestao-item";
+            item.innerHTML = `
+                <div class="sugestao-icone">📍</div>
+                <div class="sugestao-texto"><b>${l.nome}</b><small>${l.cidade}</small></div>
+            `;
+            item.onclick = () => {
+                document.getElementById("destino").value = l.nome;
+                divSugestoes.style.display = "none";
+                localSelecionado = l; 
+            };
+            divSugestoes.appendChild(item);
+        });
+    } else {
+        divSugestoes.style.display = "none";
+    }
 }
 
-
-// ================= STATUS FAKE =================
-function gerarStatus(){
-let r = Math.random()
-
-if(r < 0.2) return "🔴 Defeito"
-if(r < 0.5) return "🟡 Atrasado"
-return "🟢 Normal"
-}
-
-
-// ================= FETCH =================
+// ================= FETCH DE DADOS =================
 fetch("2026_03_11_shapeLinha.json")
-.then(r=>r.json())
-.then(data=>{
-data.forEach(p=>{
-let lat=parseFloat(p.LAT.replace(",",".")) 
-let lon=parseFloat(p.LON.replace(",","."))
-
-if(!rotas[p.COD]) rotas[p.COD]=[]
-rotas[p.COD].push([lat,lon])
-})
-})
+    .then(r => r.json())
+    .then(data => {
+        data.forEach(p => {
+            let lat = parseFloat(p.LAT.replace(",", ".")); 
+            let lon = parseFloat(p.LON.replace(",", "."));
+            let shp = p.SHP;
+            let cod = p.COD;
+            if (!shapes[shp]) shapes[shp] = [];
+            shapes[shp].push([lat, lon]);
+            if (!linhasShapes[cod]) linhasShapes[cod] = new Set();
+            linhasShapes[cod].add(shp);
+        });
+    })
+    .catch(err => console.error("Erro ao carregar shapes:", err));
 
 fetch("2026_03_16_pontosLinha.json")
-.then(r=>r.json())
-.then(data=>{
-data.forEach(p=>{
-pontosLinha.push({
-linha:p.COD,
-lat:parseFloat(p.LAT.replace(",",".")),
-lon:parseFloat(p.LON.replace(",",".")),
-nome:p.NOME
-})
-})
-})
+    .then(r => r.json())
+    .then(data => {
+        data.forEach(p => {
+            pontosLinha.push({
+                linha: p.COD,
+                lat: parseFloat(p.LAT.replace(",", ".")),
+                lon: parseFloat(p.LON.replace(",", ".")),
+                nome: p.NOME
+            });
+        });
+    })
+    .catch(err => console.error("Erro ao carregar pontos:", err));
 
+// ================= INTERFACE INICIAL =================
+function confirmarTerminal() {
+    nomeTerminalEscolhido = document.getElementById("terminalSelect").value;
+    terminalEscolhido = terminais[nomeTerminalEscolhido];
 
-// ================= TERMINAL =================
-function confirmarTerminal(){
-let nome=document.getElementById("terminalSelect").value
-terminalEscolhido=terminais[nome]
+    L.marker(terminalEscolhido).bindPopup("Você está aqui").addTo(map).openPopup();
+    map.setView(terminalEscolhido, 15);
 
-L.marker(terminalEscolhido).addTo(map)
-map.setView(terminalEscolhido,14)
-
-document.getElementById("popupTerminal").style.display="none"
+    document.getElementById("popupTerminal").style.display = "none";
+    document.getElementById("painelBusca").style.display = "block";
 }
 
+// ================= BUSCA DE DESTINO =================
+function buscarRota() {
+    let destino = document.getElementById("destino").value;
+    if(!destino) return alert("Digite um destino!");
 
-// ================= BUSCA =================
-function buscarRota(){
+    document.getElementById("sugestoes").style.display = "none"; 
 
-let destino=document.getElementById("destino").value
-
-fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${destino}`)
-.then(r=>r.json())
-.then(data=>{
-
-let lat=parseFloat(data[0].lat)
-let lon=parseFloat(data[0].lon)
-
-calcularRota(terminalEscolhido[0],terminalEscolhido[1],lat,lon)
-
-})
+    if (localSelecionado) {
+        L.marker([localSelecionado.lat, localSelecionado.lon]).bindPopup(localSelecionado.nome).addTo(map);
+        calcularRota(terminalEscolhido[0], terminalEscolhido[1], localSelecionado.lat, localSelecionado.lon);
+    } else {
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${destino}, Curitiba`)
+            .then(r => r.json())
+            .then(data => {
+                if(data.length === 0) return alert("Destino não encontrado!");
+                let lat = parseFloat(data[0].lat);
+                let lon = parseFloat(data[0].lon);
+                L.marker([lat, lon]).bindPopup("Seu Destino").addTo(map);
+                calcularRota(terminalEscolhido[0], terminalEscolhido[1], lat, lon);
+            });
+    }
 }
 
-
-// ================= LÓGICA =================
-
-function pontosProximos(lat,lon){
-return pontosLinha.filter(p=>map.distance([lat,lon],[p.lat,p.lon])<700)
+// ================= LÓGICA DE ROTAS E BALDEAÇÃO =================
+function pontosProximos(lat, lon) {
+    return pontosLinha.filter(p => map.distance([lat, lon], [p.lat, p.lon]) < 500); 
 }
 
-function distancia(a,b){
-return map.distance([a.lat,a.lon],[b.lat,b.lon])
+function distancia(a, b) {
+    return map.distance([a.lat, a.lon], [b.lat, b.lon]);
 }
 
-// encontrar ponto de troca REAL
-function encontrarBaldeacao(l1,l2){
-
-let p1=pontosLinha.filter(p=>p.linha==l1)
-let p2=pontosLinha.filter(p=>p.linha==l2)
-
-for(let a of p1){
-for(let b of p2){
-if(map.distance([a.lat,a.lon],[b.lat,b.lon])<200){
-return a
-}
-}
-}
-return null
+// NOVO: Agora retorna os dois pontos exatos para conectar as linhas!
+function encontrarBaldeacao(l1, l2) {
+    let p1 = pontosLinha.filter(p => p.linha == l1);
+    let p2 = pontosLinha.filter(p => p.linha == l2);
+    for (let a of p1) {
+        for (let b of p2) {
+            if (map.distance([a.lat, a.lon], [b.lat, b.lon]) < 200) {
+                return { embarqueTroca: a, desembarqueTroca: b }; 
+            }
+        }
+    }
+    return null;
 }
 
+// O SEGREDO DO SUCESSO: Força o ônibus a ir pra frente e "cola" a linha nos pinos
+function cortarTrecho(cod, inicio, fim) {
+    let shpsDaLinha = Array.from(linhasShapes[cod] || []);
+    let melhorTrecho = [];
+    let menorDistanciaTotal = Infinity;
 
-// cortar trajeto correto
-function cortarTrecho(cod, inicio, fim){
+    for (let shp of shpsDaLinha) {
+        let trajeto = shapes[shp];
+        let idxInicio = -1, idxFim = -1;
+        let distInicio = Infinity, distFim = Infinity;
 
-let linha = rotas[cod]
+        // Acha o ponto do trajeto mais próximo do INÍCIO
+        trajeto.forEach((p, idx) => {
+            let d1 = map.distance(p, [inicio.lat, inicio.lon]);
+            if (d1 < distInicio) { distInicio = d1; idxInicio = idx; }
+        });
 
-let start = linha.findIndex(p=>map.distance(p,[inicio.lat,inicio.lon])<200)
-let end = linha.findIndex(p=>map.distance(p,[fim.lat,fim.lon])<200)
+        // Acha o ponto do FIM, SÓ DEPOIS do início (Garante sentido certo!)
+        if (idxInicio !== -1) {
+            for(let idx = idxInicio; idx < trajeto.length; idx++) {
+                let p = trajeto[idx];
+                let d2 = map.distance(p, [fim.lat, fim.lon]);
+                if (d2 < distFim) { distFim = d2; idxFim = idx; }
+            }
+        }
 
-if(start==-1 || end==-1) return linha
+        // Se achou uma rota lógica
+        if (idxInicio !== -1 && idxFim !== -1 && idxInicio <= idxFim) {
+            let distTotal = distInicio + distFim;
+            if (distTotal < menorDistanciaTotal) {
+                menorDistanciaTotal = distTotal;
+                melhorTrecho = trajeto.slice(idxInicio, idxFim + 1);
+            }
+        }
+    }
 
-if(start < end){
-return linha.slice(start,end)
-}else{
-return linha.slice(end,start)
-}
-}
+    if (melhorTrecho.length === 0 && shpsDaLinha.length > 0) return shapes[shpsDaLinha[0]]; 
 
+    // Super Cola: Gruda exatamente no pino para não deixar "buracos" no mapa
+    if(melhorTrecho.length > 0) {
+        melhorTrecho.unshift([inicio.lat, inicio.lon]);
+        melhorTrecho.push([fim.lat, fim.lon]);
+    }
 
-function calcularRota(latO,lonO,latD,lonD){
-
-let origem=pontosProximos(latO,lonO)
-let destino=pontosProximos(latD,lonD)
-
-let rotasPossiveis=[]
-
-// sem baldeação
-origem.forEach(o=>{
-destino.forEach(d=>{
-if(o.linha==d.linha){
-rotasPossiveis.push({
-linhas:[o.linha],
-embarque:o,
-desembarque:d
-})
-}
-})
-})
-
-// com baldeação REAL
-origem.forEach(o=>{
-destino.forEach(d=>{
-if(o.linha!=d.linha){
-
-let troca=encontrarBaldeacao(o.linha,d.linha)
-if(!troca) return
-
-rotasPossiveis.push({
-linhas:[o.linha,d.linha],
-embarque:o,
-baldeacao:troca,
-desembarque:d
-})
-
-}
-})
-})
-
-
-// remove duplicadas
-let unicas=[]
-let set=new Set()
-
-rotasPossiveis.forEach(r=>{
-let key=r.linhas.join("-")+r.embarque.nome+r.desembarque.nome
-if(!set.has(key)){
-set.add(key)
-unicas.push(r)
-}
-})
-
-// calcula tempo melhor
-unicas.forEach(r=>{
-r.tempo = Math.round(
-(distancia({lat:latO,lon:lonO}, r.embarque)/80) +
-(distancia(r.embarque,r.desembarque)/120) +
-(r.linhas.length*10)
-)
-})
-
-// ordena
-unicas.sort((a,b)=>a.tempo-b.tempo)
-
-// top 3
-rotasAtuais = unicas.slice(0,3)
-
-mostrarRotas()
+    return melhorTrecho;
 }
 
+function calcularRota(latO, lonO, latD, lonD) {
+    let origem = pontosProximos(latO, lonO);
+    let destino = pontosProximos(latD, lonD);
+    let rotasPossiveis = [];
 
-// ================= UI =================
+    origem.forEach(o => {
+        destino.forEach(d => {
+            if (o.linha == d.linha) {
+                rotasPossiveis.push({ linhas: [o.linha], embarque: o, desembarque: d });
+            } else {
+                let troca = encontrarBaldeacao(o.linha, d.linha);
+                if (troca) {
+                    rotasPossiveis.push({ linhas: [o.linha, d.linha], embarque: o, baldeacao: troca, desembarque: d });
+                }
+            }
+        });
+    });
 
-function mostrarRotas(){
+    let unicas = [];
+    let set = new Set();
+    rotasPossiveis.forEach(r => {
+        let key = r.linhas.join("-") + r.embarque.nome + r.desembarque.nome;
+        if (!set.has(key)) {
+            set.add(key);
+            unicas.push(r);
+        }
+    });
 
-let html="<h3>Melhores rotas</h3>"
+    unicas.forEach(r => {
+        r.tempo = Math.round((distancia({lat:latO, lon:lonO}, r.embarque)/80) + (distancia(r.embarque, r.desembarque)/120) + (r.linhas.length*10));
+    });
 
-rotasAtuais.forEach((r,i)=>{
-
-let status1 = gerarStatus()
-let status2 = r.linhas[1] ? gerarStatus() : ""
-
-html+=`
-<div class="rota" onclick="selecionarRota(${i})">
-
-<b>Rota ${i+1}</b><br>
-
-🚌 Linha ${r.linhas[0]} (${status1})<br>
-
-${r.linhas.length>1 
-? `🔁 Trocar para linha ${r.linhas[1]} (${status2})<br>` 
-: ""}
-
-📍 ${r.embarque.nome}
-
-</div>
-`
-})
-
-document.getElementById("info").innerHTML=html
+    unicas.sort((a, b) => a.tempo - b.tempo);
+    rotasAtuais = unicas.slice(0, 3);
+    mostrarRotas();
 }
 
-
-// ================= MAPA =================
-
-function limparMapa(){
-camadas.forEach(c=>map.removeLayer(c))
-camadas=[]
+function gerarStatus() {
+    let r = Math.random();
+    if(r < 0.2) return { texto: "Com Defeito", classe: "defeito" };
+    if(r < 0.5) return { texto: "Atrasado", classe: "atrasado" };
+    return { texto: "Normal", classe: "normal" };
 }
 
-function selecionarRota(i){
+// ================= RENDERIZAR RESULTADOS =================
+function mostrarRotas() {
+    let html = "";
+    if(rotasAtuais.length === 0) {
+        html = `<div class="card"><p>Nenhuma rota encontrada para este destino num raio curto.</p></div>`;
+        document.getElementById("info").innerHTML = html;
+        return;
+    }
 
-limparMapa()
+    rotasAtuais.forEach((r, i) => {
+        let st1 = gerarStatus();
+        let st2 = r.linhas[1] ? gerarStatus() : null;
 
-let r = rotasAtuais[i]
-
-// cor dinâmica
-let cor = r.linhas.length>1 ? "orange" : "blue"
-
-// caminhada
-let c1 = L.polyline(
-[[terminalEscolhido[0],terminalEscolhido[1]],[r.embarque.lat,r.embarque.lon]],
-{dashArray:"5,10",color:"gray"}
-).addTo(map)
-
-camadas.push(c1)
-
-
-// linha 1
-let trecho1 = cortarTrecho(r.linhas[0], r.embarque, r.baldeacao || r.desembarque)
-
-let l1 = L.polyline(trecho1,{
-color:cor,
-weight:6
-}).addTo(map)
-
-camadas.push(l1)
-
-
-// baldeação
-if(r.baldeacao){
-
-let m = L.marker([r.baldeacao.lat,r.baldeacao.lon])
-.addTo(map)
-.bindPopup("🔁 Troque de ônibus aqui")
-
-camadas.push(m)
-
-
-// linha 2
-let trecho2 = cortarTrecho(r.linhas[1], r.baldeacao, r.desembarque)
-
-let l2 = L.polyline(trecho2,{
-color:"purple",
-weight:6
-}).addTo(map)
-
-camadas.push(l2)
-
+        html += `
+        <div class="rota" onclick="selecionarRota(${i})">
+            <div class="rota-titulo">📍 Opção ${i+1} (~${r.tempo} min)</div>
+            <div class="linha-info">
+                <span>🚌 <b>Linha ${r.linhas[0]}</b></span>
+                <span class="badge ${st1.classe}">${st1.texto}</span>
+            </div>
+            ${r.linhas.length > 1 ? `
+            <div class="linha-info">
+                <span>🔁 <b>Trocar p/ Linha ${r.linhas[1]}</b></span>
+                <span class="badge ${st2.classe}">${st2.texto}</span>
+            </div>` : ""}
+            <div class="local-info">Ponto Inicial: ${nomeTerminalEscolhido}</div>
+        </div>`;
+    });
+    document.getElementById("info").innerHTML = html;
 }
 
+// ================= FUNÇÃO DA ANIMAÇÃO DO ÔNIBUS =================
+function animarOnibus(caminho, corBorda) {
+    if (!caminho || caminho.length === 0) return;
+    if (animacaoOnibus) clearInterval(animacaoOnibus);
 
-// caminhada final
-let c2 = L.polyline(
-[[r.desembarque.lat,r.desembarque.lon],[...map.getCenter()]],
-{dashArray:"5,10",color:"gray"}
-).addTo(map)
+    document.documentElement.style.setProperty('--cor-borda-bus', corBorda);
+    let icone = L.divIcon({ className: 'bus-animado', html: "🚌", iconSize: [35, 35], iconAnchor: [17, 17] });
+    let markerOnibus = L.marker(caminho[0], {icon: icone}).addTo(map);
+    camadas.push(markerOnibus);
 
-camadas.push(c2)
+    let i = 0;
+    animacaoOnibus = setInterval(() => {
+        if (i < caminho.length) {
+            markerOnibus.setLatLng(caminho[i]);
+            i++;
+        } else {
+            i = 0; 
+        }
+    }, 100); 
+}
 
+// ================= DESENHAR NO MAPA =================
+function limparMapa() {
+    camadas.forEach(c => map.removeLayer(c));
+    camadas = [];
+    if (animacaoOnibus) clearInterval(animacaoOnibus);
+}
 
-// zoom
-let grupo = L.featureGroup(camadas)
-map.fitBounds(grupo.getBounds())
+function selecionarRota(i) {
+    limparMapa();
+    let r = rotasAtuais[i];
+
+    let c1 = L.polyline([[terminalEscolhido[0], terminalEscolhido[1]], [r.embarque.lat, r.embarque.lon]], {dashArray: "5,10", color: "#666", weight: 5}).addTo(map);
+    camadas.push(c1);
+
+    // Linha 1 atualizada
+    let pontoFimLinha1 = r.baldeacao ? r.baldeacao.embarqueTroca : r.desembarque;
+    let trecho1 = cortarTrecho(r.linhas[0], r.embarque, pontoFimLinha1);
+    let l1 = L.polyline(trecho1, {color: "#0056b3", weight: 8, opacity: 0.9}).addTo(map);
+    camadas.push(l1);
+    
+    animarOnibus(trecho1, "#0056b3");
+
+    if (r.baldeacao) {
+        let iconTroca = L.divIcon({className: 'custom-div-icon', html: "<div style='background:white; border-radius:50%; padding:5px; border:2px solid orange;'>🔁</div>", iconSize: [30, 30]});
+        let m = L.marker([r.baldeacao.embarqueTroca.lat, r.baldeacao.embarqueTroca.lon], {icon: iconTroca}).addTo(map).bindPopup("Troque de ônibus aqui");
+        camadas.push(m);
+
+        // NOVO: Linha tracejada caso os pontos de baldeação não sejam exatamente no mesmo milímetro
+        let cTroca = L.polyline([[r.baldeacao.embarqueTroca.lat, r.baldeacao.embarqueTroca.lon], [r.baldeacao.desembarqueTroca.lat, r.baldeacao.desembarqueTroca.lon]], {dashArray: "5,10", color: "#666", weight: 5}).addTo(map);
+        camadas.push(cTroca);
+
+        // Linha 2 atualizada
+        let trecho2 = cortarTrecho(r.linhas[1], r.baldeacao.desembarqueTroca, r.desembarque);
+        let l2 = L.polyline(trecho2, {color: "#ff8c00", weight: 8, opacity: 0.9}).addTo(map);
+        camadas.push(l2);
+    }
+
+    let destinoFinal = rotasAtuais[0].desembarque; 
+    if(localSelecionado) destinoFinal = localSelecionado; 
+    let c2 = L.polyline([[r.desembarque.lat, r.desembarque.lon], [destinoFinal.lat, destinoFinal.lon]], {dashArray: "5,10", color: "#666", weight: 5}).addTo(map);
+    camadas.push(c2);
+
+    let grupo = L.featureGroup(camadas);
+    map.fitBounds(grupo.getBounds(), {paddingTopLeft: [450, 50], paddingBottomRight: [50, 50]});
 }

@@ -1,65 +1,218 @@
-body{
-margin:0;
-font-family:Arial;
-background:#f5f7fa;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-header{
-background:#0077ff;
-color:white;
-padding:15px;
-text-align:center;
-font-size:20px;
+body {
+    background: #f5f7fa;
+    height: 100vh;
+    overflow: hidden;
 }
 
-.painel{
-text-align:center;
-padding:10px;
-background:white;
+#map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
 }
 
-input{
-padding:10px;
-width:250px;
-border-radius:8px;
-border:1px solid #ccc;
+.ui-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-width: 420px; 
+    height: 100vh;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    background: rgba(248, 249, 250, 0.95); 
+    box-shadow: 4px 0 15px rgba(0,0,0,0.15); 
+    overflow-y: auto; 
+    pointer-events: auto; 
 }
 
-button{
-padding:10px;
-border:none;
-background:#0077ff;
-color:white;
-border-radius:8px;
-cursor:pointer;
+header {
+    background: #0056b3;
+    color: white;
+    padding: 20px 15px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-#map{
-height:550px;
-margin:10px;
-border-radius:10px;
+.card {
+    background: white;
+    margin: 15px;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid #eaeaea;
 }
 
-.rota{
-background:white;
-margin:10px;
-padding:10px;
-border-radius:8px;
-cursor:pointer;
-box-shadow:0 2px 5px rgba(0,0,0,0.2);
+.input-moderno {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    outline: none;
 }
 
-.rota:hover{
-background:#e8f1ff;
+.input-moderno:focus {
+    border-color: #0056b3;
 }
 
-.popup{
-position:absolute;
-top:100px;
-left:50%;
-transform:translateX(-50%);
-background:white;
-padding:20px;
-border-radius:10px;
-z-index:1000;
+.btn-primario {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    background: #0056b3;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-primario:hover {
+    background: #004494;
+}
+
+#info {
+    margin: 0 15px 15px 15px;
+    overflow-y: visible; 
+}
+
+.rota {
+    background: white;
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-left: 5px solid #0056b3;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.rota:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.rota:active {
+    transform: scale(0.98);
+}
+
+.rota-titulo {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 12px;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
+.linha-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    white-space: nowrap; 
+}
+
+.badge.normal { background: #28a745; }
+.badge.atrasado { background: #ffc107; color: #333; }
+.badge.defeito { background: #dc3545; }
+
+.local-info {
+    font-size: 13px;
+    color: #666;
+    margin-top: 10px;
+}
+
+.autocomplete-container {
+    position: relative;
+    width: 100%;
+}
+
+.sugestoes-box {
+    display: none;
+    position: absolute;
+    top: 50px;
+    left: 0;
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 2000;
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+}
+
+.sugestao-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.sugestao-item:last-child {
+    border-bottom: none;
+}
+
+.sugestao-item:hover {
+    background: #f8f9fa;
+}
+
+.sugestao-icone {
+    color: #666;
+    margin-right: 12px;
+    font-size: 18px;
+}
+
+.sugestao-texto {
+    display: flex;
+    flex-direction: column;
+}
+
+.sugestao-texto b {
+    color: #333;
+    font-size: 15px;
+}
+
+.sugestao-texto small {
+    color: #888;
+    font-size: 13px;
+}
+
+/* ================= ANIMAÇÃO DO ÔNIBUS ================= */
+.bus-animado {
+    background: white;
+    border: 3px solid var(--cor-borda-bus, #0056b3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+    transition: margin 0.1s linear; 
 }
