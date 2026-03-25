@@ -20,6 +20,7 @@ body {
     z-index: 1;
 }
 
+/* ================= VISUAL COMPUTADOR ================= */
 .ui-container {
     position: absolute;
     top: 0;
@@ -44,6 +45,7 @@ header {
     font-size: 22px;
     font-weight: bold;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 2;
 }
 
 .card {
@@ -204,7 +206,6 @@ header {
     font-size: 13px;
 }
 
-/* ================= ANIMAÇÃO DO ÔNIBUS ================= */
 .bus-animado {
     background: white;
     border: 3px solid var(--cor-borda-bus, #0056b3);
@@ -215,4 +216,79 @@ header {
     font-size: 18px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.3);
     transition: margin 0.1s linear; 
+}
+
+/* ================= A MÁGICA DO CELULAR (COMPACTO) ================= */
+@media (max-width: 768px) {
+    .ui-container {
+        max-width: 100%;
+        background: transparent; 
+        box-shadow: none;
+        overflow-y: hidden; 
+        pointer-events: none; 
+    }
+
+    header, .card, #info {
+        pointer-events: auto; 
+    }
+
+    header {
+        border-radius: 0 0 15px 15px;
+        padding: 12px; /* Deixando o cabeçalho mais fino */
+        font-size: 18px;
+    }
+
+    .card {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        margin: 10px;
+        padding: 15px; /* Reduz espaço vazio do painel de busca */
+    }
+
+    .input-moderno {
+        margin-bottom: 10px; /* Aproxima a barra do botão */
+    }
+
+    #info {
+        margin-top: auto; 
+        margin-bottom: 0;
+        margin-left: 0;
+        margin-right: 0;
+        background: white;
+        border-radius: 20px 20px 0 0; 
+        padding: 15px;
+        max-height: 40vh; /* O PULO DO GATO: Trava a lista a 40% da tela */
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
+        overflow-y: auto; 
+    }
+
+    #info:empty {
+        display: none; 
+    }
+
+    /* Emagrecendo os cards de rota */
+    .rota {
+        padding: 10px 12px; /* Menos margem interna */
+        margin-bottom: 10px;
+    }
+
+    .rota-titulo {
+        font-size: 15px;
+        margin-bottom: 8px;
+        padding-bottom: 5px;
+    }
+
+    .linha-info {
+        font-size: 13px;
+        margin-bottom: 4px;
+    }
+
+    .badge {
+        padding: 3px 6px;
+        font-size: 10px;
+    }
+
+    .local-info {
+        font-size: 11px;
+        margin-top: 6px;
+    }
 }

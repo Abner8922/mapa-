@@ -302,7 +302,7 @@ function animarOnibus(caminho, corBorda) {
         } else {
             i = 0; 
         }
-    }, 100); 
+    }, 400); 
 }
 
 // ================= DESENHAR NO MAPA =================
